@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Task Tracker — Kanban Board</title>
+<link rel="icon" href="data:,">
+<style>
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: #f4f5f7;
+    color: #1f2328;
+  }
+
+  .board-header {
+    padding: 1.5rem 2rem;
+    background: #ffffff;
+    border-bottom: 1px solid #dfe1e6;
+  }
+
+  .board-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .board-header h1 {
+    margin: 0 0 0.25rem;
+    font-size: 1.5rem;
+  }
+
+  .board-header .subtitle {
+    margin: 0;
+    color: #5e6c84;
+    font-size: 0.95rem;
+  }
+
+  .new-task-btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    background: #0052cc;
+    color: #ffffff;
+    font-size: 0.85rem;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .new-task-btn:hover {
+    background: #0747a6;
+  }
+
+  .board {
+    display: flex;
+    gap: 1rem;
+    padding: 1.5rem 2rem;
+    align-items: flex-start;
+  }
+
+  .column {
+    flex: 1 1 0;
+    min-width: 260px;
+    background: #ebecf0;
+    border-radius: 6px;
+    padding: 0.75rem;
+  }
+
+  .column-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding: 0 0.25rem;
+  }
+
+  .column-header h2 {
+    margin: 0;
+    font-size: 1rem;
+  }
+
+  .card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-height: 60px;
+  }
+
+  .task-card {
+    background: #ffffff;
+    border-radius: 4px;
+    padding: 0.75rem;
+    box-shadow: 0 1px 2px rgba(9, 30, 66, 0.15);
+  }
+
+  .task-title {
+    margin: 0 0 0.35rem;
+    font-size: 0.95rem;
+  }
+
+  .task-description {
+    margin: 0 0 0.5rem;
+    font-size: 0.85rem;
+    color: #5e6c84;
+  }
+
+  .task-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .task-priority {
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+
+  .priority-low {
+    background: #e3fcef;
+    color: #006644;
+  }
+
+  .priority-medium {
+    background: #fffae6;
+    color: #974f0c;
+  }
+
+  .priority-high {
+    background: #ffebe6;
+    color: #bf2600;
+  }
+
+  .task-assignee {
+    color: #5e6c84;
+  }
+
+  .task-edit-btn {
+    width: 100%;
+    padding: 0.35rem;
+    border: 1px solid #dfe1e6;
+    border-radius: 4px;
+    background: #fafbfc;
+    cursor: pointer;
+    font-size: 0.8rem;
+  }
+
+  .task-edit-btn:hover {
+    background: #f4f5f7;
+  }
+
+  .task-card[draggable="true"] {
+    cursor: grab;
+  }
+
+  .task-card.dragging {
+    opacity: 0.5;
+  }
+
+  .column.drag-over {
+    outline: 2px dashed #4c9aff;
+    outline-offset: -2px;
+  }
+
+  .board-message {
+    margin: 0 2rem 1rem;
+    padding: 0.6rem 1rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+  }
+
+  .board-message.hidden {
+    display: none;
+  }
+
+  .board-message.error {
+    background: #ffebe6;
+    color: #bf2600;
+  }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(9, 30, 66, 0.54);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+
+  .modal-overlay.hidden {
+    display: none;
+  }
+
+  .modal-dialog {
+    background: #ffffff;
+    border-radius: 6px;
+    padding: 1.5rem;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 8px 16px rgba(9, 30, 66, 0.25);
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .modal-header h2 {
+    margin: 0;
+    font-size: 1.1rem;
+  }
+
+  .modal-close-btn {
+    border: none;
+    background: none;
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+    color: #5e6c84;
+  }
+
+  .modal-field {
+    margin-bottom: 0.85rem;
+  }
+
+  .modal-field label {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .modal-field input,
+  .modal-field textarea,
+  .modal-field select {
+    width: 100%;
+    padding: 0.45rem;
+    border: 1px solid #dfe1e6;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-family: inherit;
+  }
+
+  .modal-error {
+    margin-bottom: 0.85rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 4px;
+    background: #ffebe6;
+    color: #bf2600;
+    font-size: 0.85rem;
+  }
+
+  .modal-error.hidden {
+    display: none;
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+
+  .modal-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    border: 1px solid transparent;
+  }
+
+  .modal-btn-secondary {
+    background: #fafbfc;
+    border-color: #dfe1e6;
+  }
+
+  .modal-btn-primary {
+    background: #0052cc;
+    color: #ffffff;
+  }
+</style>
+</head>
+<body>
+
+<header class="board-header">
+  <div class="board-header-top">
+    <div>
+      <h1>Task Tracker</h1>
+      <p class="subtitle">Kanban board — drag tasks between columns to update their status.</p>
+    </div>
+    <button id="new-task-btn" class="new-task-btn" type="button">+ New Task</button>
+  </div>
+</header>
+
+<div id="board-message" class="board-message hidden" role="alert"></div>
+
+<main class="board">
+
+  <section class="column" data-status="ToDo">
+    <div class="column-header">
+      <h2>To Do</h2>
+    </div>
+    <div class="card-list">
+      <article class="task-card" data-task-id="sample-todo-1">
+        <h3 class="task-title">Write project proposal</h3>
+        <p class="task-description">Draft the initial scope and requirements document.</p>
+        <div class="task-meta">
+          <span class="task-priority priority-high">High</span>
+          <span class="task-assignee">Maha</span>
+        </div>
+        <button class="task-edit-btn" type="button">Edit</button>
+      </article>
+    </div>
+  </section>
+
+  <section class="column" data-status="InProgress">
+    <div class="column-header">
+      <h2>In Progress</h2>
+    </div>
+    <div class="card-list">
+      <article class="task-card" data-task-id="sample-inprogress-1">
+        <h3 class="task-title">Build storage layer</h3>
+        <div class="task-meta">
+          <span class="task-priority priority-medium">Medium</span>
+          <span class="task-assignee">Sam</span>
+        </div>
+        <button class="task-edit-btn" type="button">Edit</button>
+      </article>
+    </div>
+  </section>
+
+  <section class="column" data-status="Done">
+    <div class="column-header">
+      <h2>Done</h2>
+    </div>
+    <div class="card-list">
+      <article class="task-card" data-task-id="sample-done-1">
+        <h3 class="task-title">Set up repository</h3>
+        <p class="task-description">Initialize the project structure and dependencies.</p>
+        <div class="task-meta">
+          <span class="task-priority priority-low">Low</span>
+          <span class="task-assignee">Unassigned</span>
+        </div>
+        <button class="task-edit-btn" type="button">Edit</button>
+      </article>
+    </div>
+  </section>
+
+</main>
+
+<div id="task-modal" class="modal-overlay hidden">
+  <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-header">
+      <h2 id="modal-title">New Task</h2>
+      <button type="button" class="modal-close-btn" id="modal-close-btn" aria-label="Close">&times;</button>
+    </div>
+    <div id="modal-error" class="modal-error hidden"></div>
+    <form id="task-form">
+      <input type="hidden" id="task-id-input" name="taskId">
+      <div class="modal-field">
+        <label for="task-title-input">Title</label>
+        <input type="text" id="task-title-input" name="title">
+      </div>
+      <div class="modal-field">
+        <label for="task-description-input">Description</label>
+        <textarea id="task-description-input" name="description" rows="3"></textarea>
+      </div>
+      <div class="modal-field">
+        <label for="task-status-input">Status</label>
+        <select id="task-status-input" name="status">
+          <option value="ToDo">To Do</option>
+          <option value="InProgress">In Progress</option>
+          <option value="Done">Done</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label for="task-priority-input">Priority</label>
+        <select id="task-priority-input" name="priority">
+          <option value="Low">Low</option>
+          <option value="Medium" selected>Medium</option>
+          <option value="High">High</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label for="task-assignee-input">Assignee</label>
+        <input type="text" id="task-assignee-input" name="assignee">
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="modal-btn modal-btn-secondary" id="modal-cancel-btn">Cancel</button>
+        <button type="submit" class="modal-btn modal-btn-primary">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const API_BASE_URL = 'http://localhost:8000';
+  const PRIORITY_ORDER = { High: 0, Medium: 1, Low: 2 };
+
+  let tasks = [];
+
+  const boardMessage = document.getElementById('board-message');
+
+  function showMessage(text, type = 'error') {
+    boardMessage.textContent = text;
+    boardMessage.className = `board-message ${type}`;
+  }
+
+  function clearMessage() {
+    boardMessage.textContent = '';
+    boardMessage.className = 'board-message hidden';
+  }
+
+  async function fetchTasks() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks`);
+      if (!response.ok) {
+        throw new Error(`Failed to load tasks: ${response.status}`);
+      }
+      tasks = await response.json();
+      renderBoard(tasks);
+    } catch (error) {
+      console.error('fetchTasks failed:', error);
+    }
+  }
+
+  function renderBoard(tasksToRender) {
+    document.querySelectorAll('.column').forEach((column) => {
+      const cardList = column.querySelector('.card-list');
+      cardList.innerHTML = '';
+
+      getTasksForColumn(tasksToRender, column.dataset.status)
+        .forEach((task) => cardList.appendChild(createTaskCard(task)));
+    });
+  }
+
+  function getTasksForColumn(tasksToRender, status) {
+    return tasksToRender
+      .filter((task) => task.status === status)
+      .sort(compareByPriorityThenId);
+  }
+
+  function compareByPriorityThenId(a, b) {
+    const priorityDiff = PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
+    if (priorityDiff !== 0) return priorityDiff;
+    return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+  }
+
+  function createTaskCard(task) {
+    const card = document.createElement('article');
+    card.className = 'task-card';
+    card.dataset.taskId = task.id;
+    card.draggable = true;
+    attachCardDragHandlers(card, task);
+
+    card.appendChild(createTaskTitleEl(task));
+
+    if (task.description) {
+      card.appendChild(createTaskDescriptionEl(task));
+    }
+
+    card.appendChild(createTaskMetaEl(task));
+    card.appendChild(createEditButtonEl(task));
+
+    return card;
+  }
+
+  function attachCardDragHandlers(card, task) {
+    card.addEventListener('dragstart', (event) => {
+      event.dataTransfer.setData('text/plain', task.id);
+      event.dataTransfer.effectAllowed = 'move';
+      card.classList.add('dragging');
+    });
+
+    card.addEventListener('dragend', () => {
+      card.classList.remove('dragging');
+    });
+  }
+
+  function createTaskTitleEl(task) {
+    const title = document.createElement('h3');
+    title.className = 'task-title';
+    title.textContent = task.title;
+    return title;
+  }
+
+  function createTaskDescriptionEl(task) {
+    const description = document.createElement('p');
+    description.className = 'task-description';
+    description.textContent = task.description;
+    return description;
+  }
+
+  function createTaskMetaEl(task) {
+    const meta = document.createElement('div');
+    meta.className = 'task-meta';
+
+    const priority = document.createElement('span');
+    priority.className = `task-priority priority-${task.priority.toLowerCase()}`;
+    priority.textContent = task.priority;
+    meta.appendChild(priority);
+
+    const assignee = document.createElement('span');
+    assignee.className = 'task-assignee';
+    assignee.textContent = task.assignee || 'Unassigned';
+    meta.appendChild(assignee);
+
+    return meta;
+  }
+
+  function createEditButtonEl(task) {
+    const editBtn = document.createElement('button');
+    editBtn.className = 'task-edit-btn';
+    editBtn.type = 'button';
+    editBtn.textContent = 'Edit';
+    editBtn.addEventListener('click', () => openModal('edit', task));
+    return editBtn;
+  }
+
+  function setupDropZones() {
+    document.querySelectorAll('.column').forEach((column) => {
+      column.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        column.classList.add('drag-over');
+      });
+
+      column.addEventListener('dragleave', () => {
+        column.classList.remove('drag-over');
+      });
+
+      column.addEventListener('drop', (event) => {
+        event.preventDefault();
+        column.classList.remove('drag-over');
+        handleDrop(event, column);
+      });
+    });
+  }
+
+  async function handleDrop(event, column) {
+    const taskId = event.dataTransfer.getData('text/plain');
+    const targetStatus = column.dataset.status;
+    const task = tasks.find((t) => t.id === taskId);
+
+    if (!task || task.status === targetStatus) {
+      return;
+    }
+
+    const previousStatus = task.status;
+    task.status = targetStatus;
+    renderBoard(tasks);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks/${taskId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: targetStatus }),
+      });
+
+      if (response.ok) {
+        const updated = await response.json();
+        const index = tasks.findIndex((t) => t.id === taskId);
+        tasks[index] = updated;
+        renderBoard(tasks);
+        clearMessage();
+        return;
+      }
+
+      const errorBody = await response.json().catch(() => null);
+      task.status = previousStatus;
+      renderBoard(tasks);
+      showMessage(extractErrorDetail(errorBody, response.status), 'error');
+    } catch (networkError) {
+      task.status = previousStatus;
+      renderBoard(tasks);
+      showMessage('Unable to reach the server. Check your connection and try again.', 'error');
+    }
+  }
+
+  function extractErrorDetail(errorBody, statusCode) {
+    if (!errorBody || !errorBody.detail) {
+      return `Request failed with status ${statusCode}`;
+    }
+    if (Array.isArray(errorBody.detail)) {
+      return errorBody.detail.map((item) => item.msg).join('; ');
+    }
+    return errorBody.detail;
+  }
+
+  const taskModal = document.getElementById('task-modal');
+  const modalTitle = document.getElementById('modal-title');
+  const modalError = document.getElementById('modal-error');
+  const taskForm = document.getElementById('task-form');
+  const taskIdInput = document.getElementById('task-id-input');
+  const titleInput = document.getElementById('task-title-input');
+  const descriptionInput = document.getElementById('task-description-input');
+  const statusInput = document.getElementById('task-status-input');
+  const priorityInput = document.getElementById('task-priority-input');
+  const assigneeInput = document.getElementById('task-assignee-input');
+  const newTaskBtn = document.getElementById('new-task-btn');
+  const modalCloseBtn = document.getElementById('modal-close-btn');
+  const modalCancelBtn = document.getElementById('modal-cancel-btn');
+
+  let originalStatus = null;
+
+  function openModal(mode, task) {
+    taskIdInput.value = task ? task.id : '';
+    originalStatus = task ? task.status : null;
+    modalTitle.textContent = mode === 'edit' ? 'Edit Task' : 'New Task';
+    titleInput.value = task ? task.title : '';
+    descriptionInput.value = task ? task.description : '';
+    statusInput.value = task ? task.status : 'ToDo';
+    priorityInput.value = task ? task.priority : 'Medium';
+    assigneeInput.value = (task && task.assignee) || '';
+    hideModalError();
+    taskModal.classList.remove('hidden');
+    titleInput.focus();
+  }
+
+  function closeModal() {
+    taskModal.classList.add('hidden');
+    taskForm.reset();
+    hideModalError();
+    originalStatus = null;
+  }
+
+  function showModalError(text) {
+    modalError.textContent = text;
+    modalError.classList.remove('hidden');
+  }
+
+  function hideModalError() {
+    modalError.textContent = '';
+    modalError.classList.add('hidden');
+  }
+
+  newTaskBtn.addEventListener('click', () => openModal('create'));
+  modalCloseBtn.addEventListener('click', closeModal);
+  modalCancelBtn.addEventListener('click', closeModal);
+
+  taskModal.addEventListener('click', (event) => {
+    if (event.target === taskModal) {
+      closeModal();
+    }
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !taskModal.classList.contains('hidden')) {
+      closeModal();
+    }
+  });
+
+  taskForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const trimmedTitle = titleInput.value.trim();
+    if (!trimmedTitle) {
+      showModalError('Title is required');
+      return;
+    }
+
+    const trimmedAssignee = assigneeInput.value.trim();
+    const taskId = taskIdInput.value;
+    const isEdit = Boolean(taskId);
+
+    const payload = {
+      title: trimmedTitle,
+      description: descriptionInput.value,
+      priority: priorityInput.value,
+      assignee: trimmedAssignee === '' ? null : trimmedAssignee,
+    };
+
+    if (!isEdit || statusInput.value !== originalStatus) {
+      payload.status = statusInput.value;
+    }
+
+    const url = isEdit ? `${API_BASE_URL}/tasks/${taskId}` : `${API_BASE_URL}/tasks`;
+    const method = isEdit ? 'PATCH' : 'POST';
+
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        closeModal();
+        await fetchTasks();
+        return;
+      }
+
+      const errorBody = await response.json().catch(() => null);
+      showModalError(extractErrorDetail(errorBody, response.status));
+    } catch (networkError) {
+      showModalError('Unable to reach the server. Check your connection and try again.');
+    }
+  });
+
+  setupDropZones();
+  fetchTasks();
+</script>
+
+</body>
+</html>
