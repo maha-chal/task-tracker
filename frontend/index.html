@@ -142,6 +142,14 @@
     color: #5e6c84;
   }
 
+  .task-due-date {
+    color: #5e6c84;
+  }
+
+  .task-card.overdue {
+    border-left: 4px solid #bf2600;
+  }
+
   .task-edit-btn {
     width: 100%;
     padding: 0.35rem;
@@ -297,6 +305,7 @@
       <h1>Task Tracker</h1>
       <p class="subtitle">Kanban board — drag tasks between columns to update their status.</p>
     </div>
+    <label><input type="checkbox" id="overdue-filter-toggle"> Show overdue only</label>
     <button id="new-task-btn" class="new-task-btn" type="button">+ New Task</button>
   </div>
 </header>
@@ -394,6 +403,10 @@
         <label for="task-assignee-input">Assignee</label>
         <input type="text" id="task-assignee-input" name="assignee">
       </div>
+      <div class="modal-field">
+        <label for="task-due-date-input">Due date</label>
+        <input type="date" id="task-due-date-input" name="due_date">
+      </div>
       <div class="modal-actions">
         <button type="button" class="modal-btn modal-btn-secondary" id="modal-cancel-btn">Cancel</button>
         <button type="submit" class="modal-btn modal-btn-primary">Save</button>
@@ -407,8 +420,21 @@
   const PRIORITY_ORDER = { High: 0, Medium: 1, Low: 2 };
 
   let tasks = [];
+  let overdueFilterOnly = false;
 
   const boardMessage = document.getElementById('board-message');
+
+  function todayIsoString() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function isOverdue(task) {
+    return task.due_date !== null && task.due_date < todayIsoString() && task.status !== 'Done';
+  }
 
   function showMessage(text, type = 'error') {
     boardMessage.textContent = text;
@@ -422,7 +448,8 @@
 
   async function fetchTasks() {
     try {
-      const response = await fetch(`${API_BASE_URL}/tasks`);
+      const url = overdueFilterOnly ? `${API_BASE_URL}/tasks?overdue=true` : `${API_BASE_URL}/tasks`;
+      const response = await fetch(url);
       if (!response.ok) {
         throw new Error(`Failed to load tasks: ${response.status}`);
       }
@@ -457,7 +484,7 @@
 
   function createTaskCard(task) {
     const card = document.createElement('article');
-    card.className = 'task-card';
+    card.className = isOverdue(task) ? 'task-card overdue' : 'task-card';
     card.dataset.taskId = task.id;
     card.draggable = true;
     attachCardDragHandlers(card, task);
@@ -466,6 +493,10 @@
 
     if (task.description) {
       card.appendChild(createTaskDescriptionEl(task));
+    }
+
+    if (task.due_date) {
+      card.appendChild(createTaskDueDateEl(task));
     }
 
     card.appendChild(createTaskMetaEl(task));
@@ -498,6 +529,13 @@
     description.className = 'task-description';
     description.textContent = task.description;
     return description;
+  }
+
+  function createTaskDueDateEl(task) {
+    const dueDate = document.createElement('span');
+    dueDate.className = 'task-due-date';
+    dueDate.textContent = task.due_date;
+    return dueDate;
   }
 
   function createTaskMetaEl(task) {
@@ -605,7 +643,9 @@
   const statusInput = document.getElementById('task-status-input');
   const priorityInput = document.getElementById('task-priority-input');
   const assigneeInput = document.getElementById('task-assignee-input');
+  const dueDateInput = document.getElementById('task-due-date-input');
   const newTaskBtn = document.getElementById('new-task-btn');
+  const overdueFilterToggle = document.getElementById('overdue-filter-toggle');
   const modalCloseBtn = document.getElementById('modal-close-btn');
   const modalCancelBtn = document.getElementById('modal-cancel-btn');
 
@@ -620,6 +660,7 @@
     statusInput.value = task ? task.status : 'ToDo';
     priorityInput.value = task ? task.priority : 'Medium';
     assigneeInput.value = (task && task.assignee) || '';
+    dueDateInput.value = task ? (task.due_date || '') : '';
     hideModalError();
     taskModal.classList.remove('hidden');
     titleInput.focus();
@@ -641,6 +682,11 @@
     modalError.textContent = '';
     modalError.classList.add('hidden');
   }
+
+  overdueFilterToggle.addEventListener('change', () => {
+    overdueFilterOnly = overdueFilterToggle.checked;
+    fetchTasks();
+  });
 
   newTaskBtn.addEventListener('click', () => openModal('create'));
   modalCloseBtn.addEventListener('click', closeModal);
@@ -676,6 +722,7 @@
       description: descriptionInput.value,
       priority: priorityInput.value,
       assignee: trimmedAssignee === '' ? null : trimmedAssignee,
+      due_date: dueDateInput.value === '' ? null : dueDateInput.value,
     };
 
     if (!isEdit || statusInput.value !== originalStatus) {
