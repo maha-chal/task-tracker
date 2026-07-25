@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from enum import Enum
 from typing import Optional
 
@@ -25,6 +25,7 @@ class TaskCreate(BaseModel):
     status: TaskStatus = TaskStatus.TODO
     priority: TaskPriority = TaskPriority.MEDIUM
     assignee: Optional[str] = None
+    due_date: Optional[date] = None
 
     @field_validator("title")
     @classmethod
@@ -36,6 +37,13 @@ class TaskCreate(BaseModel):
             raise ValueError("Title cannot exceed 200 characters")
         return stripped
 
+    @field_validator("due_date", mode="before")
+    @classmethod
+    def validate_due_date_type(cls, value):
+        if value is not None and not isinstance(value, str):
+            raise ValueError("due_date must be a string in YYYY-MM-DD format")
+        return value
+
 
 class TaskUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -45,6 +53,7 @@ class TaskUpdate(BaseModel):
     status: Optional[TaskStatus] = None
     priority: Optional[TaskPriority] = None
     assignee: Optional[str] = None
+    due_date: Optional[date] = None
 
     @field_validator("title")
     @classmethod
@@ -58,6 +67,13 @@ class TaskUpdate(BaseModel):
             raise ValueError("Title cannot exceed 200 characters")
         return stripped
 
+    @field_validator("due_date", mode="before")
+    @classmethod
+    def validate_due_date_type(cls, value):
+        if value is not None and not isinstance(value, str):
+            raise ValueError("due_date must be a string in YYYY-MM-DD format")
+        return value
+
 
 class TaskResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -68,5 +84,6 @@ class TaskResponse(BaseModel):
     status: TaskStatus
     priority: TaskPriority
     assignee: Optional[str]
+    due_date: Optional[date] = None
     created_at: datetime
     updated_at: datetime
