@@ -26,6 +26,7 @@ class TaskCreate(BaseModel):
     priority: TaskPriority = TaskPriority.MEDIUM
     assignee: Optional[str] = None
     due_date: Optional[date] = None
+    tags: list[str] = []
 
     @field_validator("title")
     @classmethod
@@ -44,6 +45,20 @@ class TaskCreate(BaseModel):
             raise ValueError("due_date must be a string in YYYY-MM-DD format")
         return value
 
+    @field_validator("tags")
+    @classmethod
+    def validate_tags(cls, value: list[str]) -> list[str]:
+        cleaned: list[str] = []
+        seen_lower: set[str] = set()
+        for tag in value:
+            stripped = tag.strip()
+            if not stripped:
+                raise ValueError("Tag values cannot be blank")
+            if stripped.lower() not in seen_lower:
+                cleaned.append(stripped)
+                seen_lower.add(stripped.lower())
+        return cleaned
+
 
 class TaskUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -54,6 +69,7 @@ class TaskUpdate(BaseModel):
     priority: Optional[TaskPriority] = None
     assignee: Optional[str] = None
     due_date: Optional[date] = None
+    tags: Optional[list[str]] = None
 
     @field_validator("title")
     @classmethod
@@ -74,6 +90,22 @@ class TaskUpdate(BaseModel):
             raise ValueError("due_date must be a string in YYYY-MM-DD format")
         return value
 
+    @field_validator("tags")
+    @classmethod
+    def validate_tags(cls, value: Optional[list[str]]) -> Optional[list[str]]:
+        if value is None:
+            return value
+        cleaned: list[str] = []
+        seen_lower: set[str] = set()
+        for tag in value:
+            stripped = tag.strip()
+            if not stripped:
+                raise ValueError("Tag values cannot be blank")
+            if stripped.lower() not in seen_lower:
+                cleaned.append(stripped)
+                seen_lower.add(stripped.lower())
+        return cleaned
+
 
 class TaskResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -85,5 +117,6 @@ class TaskResponse(BaseModel):
     priority: TaskPriority
     assignee: Optional[str]
     due_date: Optional[date] = None
+    tags: list[str] = []
     created_at: datetime
     updated_at: datetime
