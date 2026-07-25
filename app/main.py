@@ -9,8 +9,8 @@ from app.models import TaskCreate, TaskPriority, TaskResponse, TaskStatus, TaskU
 
 app = FastAPI(
     title="Task Tracker API",
-    description="Module 1: minimal skeleton with a health check endpoint.",
-    version="0.1.0",
+    description="A REST API for tracking tasks: CRUD, status-transition rules, due dates, and tags.",
+    version="0.2.0",
 )
 
 app.add_middleware(
