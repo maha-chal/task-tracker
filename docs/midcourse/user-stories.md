@@ -117,3 +117,46 @@ that I don't lose organization work by accident.
 in the original draft. Corrected to state it explicitly, since this is easy to get backwards
 during implementation and directly affects whether "clear all tags" and "no tag change" are
 handled correctly.
+
+### Story 7 — Filter tasks by tag
+
+As a team member, I want to filter tasks by tag so that I can focus on tasks related to a
+specific area of work.
+
+**Acceptance Criteria**
+- `GET /tasks?tag=<value>` returns only tasks whose `tags` list contains a case-insensitive match
+  for `<value>`.
+- If no tasks match the given tag, the response is `200` with an empty list, not an error.
+- `GET /tasks` without the `tag` parameter returns all tasks regardless of their tags.
+- Filtering by `tag` combines with the existing `status`, `priority`, and `overdue` filters using
+  AND logic, consistent with how those filters already combine with each other.
+
+**Gap identified during planning:** the original feature brief's "Expected frontend work" column
+mentioned "tag filtering or search by tag," and "Good tests to include" listed "filter by tag,"
+but neither was captured as an acceptance criterion when Stories 4-6 were originally drafted.
+Added as its own story now, before implementing the storage layer, rather than building
+undocumented backend behavior.
+
+### Story 8 — Update a task's tags
+
+As a team member, I want to update a task's tags so that I can adjust how it's categorized as
+work evolves.
+
+**Acceptance Criteria**
+- Sending a new `tags` array on update **replaces** the existing tags entirely with the new set
+  (not merged or appended).
+- Updating `tags` does not change any other field (title, description, status, priority,
+  assignee, due_date).
+- Each tag in the new set is trimmed, rejected if blank, and deduplicated case-insensitively, using
+  the same validation as task creation (Stories 4-5).
+- Submitting a blank tag in an update request returns HTTP 422, and the task's existing tags (and
+  every other field) are left completely unchanged — Pydantic validates the full request body
+  before the route handler runs, so no partial write can occur.
+
+**Gap identified during planning:** the original feature brief's "Good tests to include" column
+listed "update tags" alongside "create with tags," "reject empty tag," "filter by tag," and
+"preserve tags after unrelated update" — but only the latter three ended up as explicit stories.
+Story 6 covers *preserving* tags during an unrelated update and *clearing* them via `tags: []`,
+but never asserted that sending a genuinely new, non-empty tag set actually replaces the old one.
+Added now, mirroring how Story 2 gave `due_date` updates their own story separate from Story 1's
+creation-time behavior.
