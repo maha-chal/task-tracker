@@ -14,7 +14,8 @@ be finished.
 
 **Acceptance Criteria**
 - `due_date` is optional; omitting it still creates the task successfully.
-- A provided `due_date` must be a valid date; an invalid format returns HTTP 422.
+- A provided `due_date` must match `YYYY-MM-DD` (ISO 8601 date, no time component); any other
+  format returns HTTP 422.
 - A created task's card renders a `<span class="task-due-date">` element showing the due date
   formatted as `YYYY-MM-DD`, verifiable via `document.querySelector('.task-due-date').textContent`.
 - A due date may be any valid calendar date, including a date in the past — a task can be
@@ -33,8 +34,8 @@ changes.
 - Sending a new `due_date` on update changes only that field; other fields remain unchanged.
 - Omitting `due_date` from the update leaves the existing value unchanged; sending
   `due_date: null` explicitly clears it — these are not the same request.
-- An invalid due date format on update returns HTTP 422 and the task's due date is left
-  unchanged.
+- An invalid due date format on update (same `YYYY-MM-DD` format as task creation) returns
+  HTTP 422 and the task's due date is left unchanged.
 
 **AI assumption corrected:** the null-vs-omitted distinction for clearing `due_date` was applied
 silently (by analogy with the existing `assignee` field) rather than stated. Corrected to make
@@ -88,8 +89,9 @@ As a team member, I want blank tags to be rejected so that the tag list stays me
 - Submitting a tag that is empty or whitespace-only returns HTTP 422, and the task is not
   created or updated.
 - Existing valid tags on the task are unaffected when a blank tag submission is rejected.
-- Duplicate tag values (case-insensitive) are deduplicated before saving; submitting the same
-  tag twice results in it being stored once.
+- *(Assumption, not in the original brief: duplicate tag values are deduplicated rather than
+  rejected.)* Duplicate tag values (case-insensitive) are deduplicated before saving; submitting
+  the same tag twice results in it being stored once.
 - The 422 response body's `detail` field contains the exact substring `"tag"` (e.g., a message
   like `"Tag values cannot be blank"`), matching the existing pattern of asserting exact `detail`
   text used elsewhere in this project's tests.
