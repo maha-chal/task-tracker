@@ -18,12 +18,17 @@ This confirms a clean, working starting point before any midterm feature work be
 |---|---|---|
 | Baseline | `python -m pytest tests/test_tasks.py -v` | 18 passed |
 | After Feature 1 (due dates + overdue filter) | `python -m pytest tests/test_tasks.py -v` | **32 passed** (18 baseline + 14 new) |
-| After Feature 2 (tags/labels) | *(pending)* | *(pending)* |
+| After Feature 2 (tags/labels) | `python -m pytest tests/test_tasks.py -v` | **45 passed** (32 + 13 new) |
 
 Feature 1's 14 new tests cover: creation with a valid/omitted/invalid-format/numeric/past due
 date; update with partial change, omitted-vs-null, and invalid-format atomicity; and the overdue
 filter (past-due inclusion, future/null exclusion, `Done`-status exclusion, unfiltered `GET`
 returning everything regardless of overdue state).
+
+Feature 2's 13 new tests cover: creation with valid/omitted/trimmed/blank/duplicate tags; update
+with replace (Story 8), omit-preserves (Story 6), explicit-clear (Story 6), and blank-tag
+atomicity (Story 5); and the tag filter (case-insensitive match, no-match empty list, unfiltered
+`GET`, and AND-logic combination with `status`).
 
 ## Manual browser checks
 
@@ -44,7 +49,9 @@ returning everything regardless of overdue state).
   networking gap unrelated to the application code. Recommend a quick manual confirmation in a
   real browser, where this backend has reliably been reachable all session.
 
-**Feature 2 (tags/labels):** *(pending — not yet implemented)*
+**Feature 2 (tags/labels):** *(pending — backend and tests are complete and verified via pytest,
+but frontend integration hasn't been built yet, so there's no browser check to run against it.
+Will be completed once the frontend step is done.)*
 
 ## Break Test evidence
 
@@ -66,6 +73,31 @@ returning everything regardless of overdue state).
 - Actual: exactly as predicted — `1 failed, 31 passed`. The failure showed the `Done` task's own
   id appearing in the `?overdue=true` results, proving the test genuinely catches the regression.
 - Reverted; suite back to `32 passed`.
+
+**3. Story 8 "replace, not merge" for tag updates (Feature 2 business logic)**
+- Target: `test_patch_tags_replaces_existing_set`.
+- Break: `update_task` merges new tags with existing ones instead of replacing, whenever the new
+  `tags` value is non-empty (a plausible "helpful" bug — preserving old tags rather than
+  overwriting them).
+- Prediction: only this one test would fail; `test_patch_explicit_empty_tags_clears_them` and
+  `test_patch_omitting_tags_leaves_them_unchanged` would be unaffected, since the merge only
+  triggers when the new `tags` value is truthy.
+- Actual: exactly as predicted — `1 failed, 44 passed`. The failure showed
+  `['urgent', 'frontend', 'review']` instead of `['frontend', 'review']` — the old tag leaked
+  through, proving the test genuinely catches a merge-instead-of-replace regression.
+- Reverted; suite back to `45 passed`.
+
+**4. Tag filter's AND-logic combination with other filters (Feature 2 business logic)**
+- Target: `test_list_tasks_filter_by_tag_and_status_combines_with_and_logic`.
+- Break: the tag filter in `get_all_tasks` re-scanned the full `_tasks.values()` instead of
+  continuing to narrow the already-filtered `tasks` variable — a classic wrong-variable bug that
+  silently discards any `status`/`priority`/`overdue` filtering applied earlier in the same call.
+- Prediction: only this one test would fail; the two single-filter tag tests would be unaffected,
+  since `tasks` and `_tasks.values()` are identical when no other filter is combined.
+- Actual: exactly as predicted — `1 failed, 44 passed`. The failure showed both the matching
+  (`InProgress`) task and the non-matching (`ToDo`) task returned (2 instead of 1), proving the
+  `status` filter was silently discarded once the tag filter re-scanned the full unfiltered set.
+- Reverted; suite back to `45 passed`.
 
 ## Behavior contract before/after refactor
 
