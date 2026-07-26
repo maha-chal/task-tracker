@@ -764,25 +764,15 @@
     }
   });
 
-  taskForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
-
-    const trimmedTitle = titleInput.value.trim();
-    if (!trimmedTitle) {
-      showModalError('Title is required');
-      return;
-    }
-
+  function buildTaskPayload(isEdit) {
     const trimmedAssignee = assigneeInput.value.trim();
     const parsedTags = tagsInput.value
       .split(',')
       .map((tagValue) => tagValue.trim())
       .filter((tagValue) => tagValue !== '');
-    const taskId = taskIdInput.value;
-    const isEdit = Boolean(taskId);
 
     const payload = {
-      title: trimmedTitle,
+      title: titleInput.value.trim(),
       description: descriptionInput.value,
       priority: priorityInput.value,
       assignee: trimmedAssignee === '' ? null : trimmedAssignee,
@@ -793,6 +783,22 @@
     if (!isEdit || statusInput.value !== originalStatus) {
       payload.status = statusInput.value;
     }
+
+    return payload;
+  }
+
+  taskForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const trimmedTitle = titleInput.value.trim();
+    if (!trimmedTitle) {
+      showModalError('Title is required');
+      return;
+    }
+
+    const taskId = taskIdInput.value;
+    const isEdit = Boolean(taskId);
+    const payload = buildTaskPayload(isEdit);
 
     const url = isEdit ? `${API_BASE_URL}/tasks/${taskId}` : `${API_BASE_URL}/tasks`;
     const method = isEdit ? 'PATCH' : 'POST';

@@ -112,7 +112,26 @@ atomicity (Story 5); and the tag filter (case-insensitive match, no-match empty 
 
 ## Behavior contract before/after refactor
 
-*(Pending — no refactor pass has been performed on the midterm feature code yet. This section
-will be completed once a refactor is done on Feature 1 and/or Feature 2, following the same
-before/after comparison method already used earlier in this project on `renderBoard`/
-`createTaskCard`.)*
+**Refactor:** extracted the create/edit modal's inline payload-construction logic (title trim,
+assignee/due_date null-conversion, tag parsing, conditional `status` inclusion) out of the
+`taskForm` submit handler into its own `buildTaskPayload(isEdit)` function in `frontend/index.html`
+— the same extract-a-helper pattern already used for `createTaskTitleEl`/`createTaskMetaEl`/etc.
+No behavior was intended to change; only where the logic lives.
+
+**Method:** captured the exact payload produced for 3 representative scenarios *before* the
+refactor (by executing the literal pre-refactor inline logic against constructed form input), then
+reloaded the page after the refactor and called the new `buildTaskPayload(isEdit)` directly against
+the same 3 scenarios.
+
+| Scenario | Description |
+|---|---|
+| A | Create, minimal fields (empty description/assignee/due_date/tags) |
+| B | Edit, no status change (title/description/priority/assignee/due_date/tags all populated) |
+| C | Edit, status changed (same as B, but with a different `status` value than `originalStatus`) |
+
+**Result:** `JSON.stringify(afterResults) === JSON.stringify(beforeResults)` → **`true`** — all
+three scenarios produced byte-for-byte identical payloads before and after the refactor, including
+the conditional `status` key being present in A and C but correctly absent in B.
+
+**Backend regression check:** unaffected by this frontend-only refactor, but re-run anyway —
+`python -m pytest tests/test_tasks.py -v` → **45 passed**, unchanged.
