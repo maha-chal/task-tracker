@@ -49,9 +49,20 @@ atomicity (Story 5); and the tag filter (case-insensitive match, no-match empty 
   networking gap unrelated to the application code. Recommend a quick manual confirmation in a
   real browser, where this backend has reliably been reachable all session.
 
-**Feature 2 (tags/labels):** *(pending — backend and tests are complete and verified via pytest,
-but frontend integration hasn't been built yet, so there's no browser check to run against it.
-Will be completed once the frontend step is done.)*
+**Feature 2 (tags/labels):**
+- `renderBoard()` called with constructed task data: a tagged task's card rendered exactly one
+  `.tag-chip` element per tag with the correct text; an untagged task's card had no `.task-tags`
+  container at all (conditional append confirmed).
+- `openModal('edit', task)` correctly pre-fills the tags input as `"urgent, backend"`;
+  `openModal('create')` leaves it empty.
+- The submit handler's tag-parsing logic (split on comma, trim, filter empty) was executed
+  directly: `"urgent, backend, review"` → 3 clean tags; messy input with extra commas/spaces
+  (`"  urgent ,, backend ,  "`) → correctly collapsed to `["urgent", "backend"]`; empty string →
+  `[]`.
+- **Known limitation:** same as Feature 1 — the live `fetch`-based round trip (typing into the tag
+  filter input against real backend data) could not be verified in this session's embedded
+  Browser pane, for the same sandbox networking reason. Recommend a quick manual confirmation in a
+  real browser.
 
 ## Break Test evidence
 

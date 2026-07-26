@@ -76,5 +76,54 @@ scoped features end-to-end. Two architecture options were evaluated before codin
 
 ## Implementation summary
 
-*(To be completed after Feature 1 and Feature 2 are implemented and verified, per the
-recommended workflow: backend → tests → frontend, verifying each layer before moving on.)*
+Both features were implemented in the same small-step order for each: models → storage → route →
+tests → frontend, verifying each layer (manual sanity checks and/or the full pytest suite) before
+moving to the next, per the recommended workflow.
+
+**Feature 1 (Due dates + overdue filter):**
+- `app/models.py`: added `due_date: Optional[date]` to all three task models, plus a
+  `field_validator("due_date", mode="before")` rejecting non-`str`/non-`None` input. This closed a
+  real gap found during review: Pydantic's native `date` type silently accepts an int/float as a
+  Unix timestamp instead of returning 422, which would have made the "any other format returns
+  422" acceptance criterion false for numeric input specifically.
+- `app/storage.py`: `add_task` persists `due_date`; a new `is_overdue()` helper (due date in the
+  past, status not `Done`); `get_all_tasks` gained an `overdue` filter. `update_task` needed no
+  changes — verified (not assumed) that its existing `exclude_unset` + `model_copy` pattern
+  already handles omit-vs-null correctly, the same way it already did for `assignee`.
+- `app/main.py`: exposed `overdue` as a query parameter on `GET /tasks`.
+- Tests: 14 new tests (creation, update, and the overdue filter, including the Done-status
+  exclusion and the numeric-input rejection).
+- Frontend: due-date input in the modal, `.task-due-date` display on cards, `isOverdue()`/
+  `todayIsoString()` (naive local date, no UTC) driving an `overdue` CSS class, and a "Show
+  overdue only" toggle wired into `fetchTasks`.
+- Break Tests: 2 (title+transition atomicity reused from earlier in the session; `is_overdue()`'s
+  `Done`-exclusion clause).
+
+**Feature 2 (Tags / labels):**
+- Before implementing storage, a review of the original feature brief against the drafted user
+  stories surfaced two gaps: "filter by tag" and "update tags" were listed in the brief's "Good
+  tests to include" column but had never become explicit acceptance criteria. Added **Story 7**
+  (filter tasks by tag) and **Story 8** (update a task's tags, replacing not merging) to
+  `user-stories.md` *before* writing the corresponding code, rather than building undocumented
+  backend behavior.
+- `app/models.py`: added `tags: list[str]` (required, defaulting to `[]`) to `TaskCreate`/
+  `TaskResponse` and `Optional[list[str]]` to `TaskUpdate`; a `tags` validator trims each value,
+  rejects blank entries, and deduplicates case-insensitively while preserving first-occurrence
+  casing/order.
+- `app/storage.py`: `add_task` persists `tags`; `get_all_tasks` gained a case-insensitive `tag`
+  filter combining with `status`/`priority`/`overdue` via AND logic. `update_task` was verified
+  (not assumed) against all three Story 6/8 cases: omit leaves unchanged, explicit `[]` clears,
+  explicit new set replaces without touching other fields.
+- `app/main.py`: exposed `tag` as a query parameter on `GET /tasks`.
+- Tests: 13 new tests (creation, update — including the replace-vs-merge case — and the tag
+  filter, including its AND-logic combination with `status`).
+- Frontend: comma-separated tags input in the modal (locked-in simplest option over an
+  interactive chip widget), `.tag-chip` rendering on cards, and a tag-filter text input;
+  `fetchTasks` was rewritten to build its query with `URLSearchParams` so the `overdue` and `tag`
+  filters can combine, instead of the single-condition ternary it had before.
+- Break Tests: 2 (Story 8's replace-not-merge behavior; the tag filter's AND-logic combination
+  with other filters — both isolated to fail exactly one targeted test, verifying the rest of the
+  suite was unaffected).
+
+**Net result:** both features fully implemented end-to-end (backend, tests, frontend), 45 pytest
+tests passing (18 baseline + 27 new), 4 Break Tests documented, no new dependencies introduced.
