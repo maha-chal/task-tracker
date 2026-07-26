@@ -150,6 +150,28 @@
     border-left: 4px solid #bf2600;
   }
 
+  .task-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .tag-chip {
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    background: #ebecf0;
+    color: #42526e;
+    font-size: 0.75rem;
+  }
+
+  #tag-filter-input {
+    padding: 0.4rem 0.6rem;
+    border: 1px solid #dfe1e6;
+    border-radius: 4px;
+    font-size: 0.85rem;
+  }
+
   .task-edit-btn {
     width: 100%;
     padding: 0.35rem;
@@ -305,6 +327,7 @@
       <h1>Task Tracker</h1>
       <p class="subtitle">Kanban board — drag tasks between columns to update their status.</p>
     </div>
+    <input type="text" id="tag-filter-input" placeholder="Filter by tag">
     <label><input type="checkbox" id="overdue-filter-toggle"> Show overdue only</label>
     <button id="new-task-btn" class="new-task-btn" type="button">+ New Task</button>
   </div>
@@ -407,6 +430,10 @@
         <label for="task-due-date-input">Due date</label>
         <input type="date" id="task-due-date-input" name="due_date">
       </div>
+      <div class="modal-field">
+        <label for="task-tags-input">Tags</label>
+        <input type="text" id="task-tags-input" name="tags" placeholder="e.g. urgent, backend">
+      </div>
       <div class="modal-actions">
         <button type="button" class="modal-btn modal-btn-secondary" id="modal-cancel-btn">Cancel</button>
         <button type="submit" class="modal-btn modal-btn-primary">Save</button>
@@ -421,6 +448,7 @@
 
   let tasks = [];
   let overdueFilterOnly = false;
+  let tagFilterValue = '';
 
   const boardMessage = document.getElementById('board-message');
 
@@ -448,7 +476,15 @@
 
   async function fetchTasks() {
     try {
-      const url = overdueFilterOnly ? `${API_BASE_URL}/tasks?overdue=true` : `${API_BASE_URL}/tasks`;
+      const params = new URLSearchParams();
+      if (overdueFilterOnly) {
+        params.set('overdue', 'true');
+      }
+      if (tagFilterValue) {
+        params.set('tag', tagFilterValue);
+      }
+      const queryString = params.toString();
+      const url = queryString ? `${API_BASE_URL}/tasks?${queryString}` : `${API_BASE_URL}/tasks`;
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error(`Failed to load tasks: ${response.status}`);
@@ -499,6 +535,10 @@
       card.appendChild(createTaskDueDateEl(task));
     }
 
+    if (task.tags.length > 0) {
+      card.appendChild(createTaskTagsEl(task));
+    }
+
     card.appendChild(createTaskMetaEl(task));
     card.appendChild(createEditButtonEl(task));
 
@@ -536,6 +576,18 @@
     dueDate.className = 'task-due-date';
     dueDate.textContent = task.due_date;
     return dueDate;
+  }
+
+  function createTaskTagsEl(task) {
+    const tagsContainer = document.createElement('div');
+    tagsContainer.className = 'task-tags';
+    task.tags.forEach((tagValue) => {
+      const chip = document.createElement('span');
+      chip.className = 'tag-chip';
+      chip.textContent = tagValue;
+      tagsContainer.appendChild(chip);
+    });
+    return tagsContainer;
   }
 
   function createTaskMetaEl(task) {
@@ -644,8 +696,10 @@
   const priorityInput = document.getElementById('task-priority-input');
   const assigneeInput = document.getElementById('task-assignee-input');
   const dueDateInput = document.getElementById('task-due-date-input');
+  const tagsInput = document.getElementById('task-tags-input');
   const newTaskBtn = document.getElementById('new-task-btn');
   const overdueFilterToggle = document.getElementById('overdue-filter-toggle');
+  const tagFilterInput = document.getElementById('tag-filter-input');
   const modalCloseBtn = document.getElementById('modal-close-btn');
   const modalCancelBtn = document.getElementById('modal-cancel-btn');
 
@@ -661,6 +715,7 @@
     priorityInput.value = task ? task.priority : 'Medium';
     assigneeInput.value = (task && task.assignee) || '';
     dueDateInput.value = task ? (task.due_date || '') : '';
+    tagsInput.value = task ? task.tags.join(', ') : '';
     hideModalError();
     taskModal.classList.remove('hidden');
     titleInput.focus();
@@ -685,6 +740,11 @@
 
   overdueFilterToggle.addEventListener('change', () => {
     overdueFilterOnly = overdueFilterToggle.checked;
+    fetchTasks();
+  });
+
+  tagFilterInput.addEventListener('input', () => {
+    tagFilterValue = tagFilterInput.value.trim();
     fetchTasks();
   });
 
@@ -714,6 +774,10 @@
     }
 
     const trimmedAssignee = assigneeInput.value.trim();
+    const parsedTags = tagsInput.value
+      .split(',')
+      .map((tagValue) => tagValue.trim())
+      .filter((tagValue) => tagValue !== '');
     const taskId = taskIdInput.value;
     const isEdit = Boolean(taskId);
 
@@ -723,6 +787,7 @@
       priority: priorityInput.value,
       assignee: trimmedAssignee === '' ? null : trimmedAssignee,
       due_date: dueDateInput.value === '' ? null : dueDateInput.value,
+      tags: parsedTags,
     };
 
     if (!isEdit || statusInput.value !== originalStatus) {
