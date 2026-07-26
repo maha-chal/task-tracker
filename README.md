@@ -7,6 +7,18 @@ Kanban-board frontend (no framework, no build step). Tasks have a title, descrip
 The backend exposes a REST API (`/tasks`) with full CRUD, status-transition business rules, and
 filtering. The frontend renders tasks as a drag-and-drop Kanban board with a create/edit modal.
 
+## Features
+
+- **Kanban board:** three columns (To Do / In Progress / Done), drag a card between columns to
+  update its status.
+- **Create/edit modal:** click "+ New Task" or a card's "Edit" button to open the form.
+- **Due dates + overdue filter:** set a due date in the modal; a task past its due date (and not
+  `Done`) is highlighted on its card with a red border. Check "Show overdue only" in the header to
+  filter the board to just those tasks.
+- **Tags + tag filter:** enter comma-separated tags in the modal (e.g. `urgent, backend`); they
+  render as chips on the card. Type into the "Filter by tag" field in the header to filter the
+  board to tasks matching that tag.
+
 ## Setup
 
 1. Create and activate a virtual environment:
