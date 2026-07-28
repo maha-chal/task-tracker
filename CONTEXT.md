@@ -2,8 +2,7 @@
 
 This file summarizes the decisions and requirements established for this
 project so far, for anyone (human or AI) picking up the codebase without
-prior context. For the original Module 1 version of this document, see
-[CONTEXT_v0.md](CONTEXT_v0.md).
+prior context.
 
 ## What this project is
 
