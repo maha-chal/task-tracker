@@ -11,7 +11,10 @@ Project instructions for Claude Code working in this repository (Module 4 Task T
 - Uvicorn (`uvicorn[standard]>=0.29`)
 - pytest (`pytest>=9.0`)
 - httpx (`httpx>=0.28`)
-- python-dotenv (`python-dotenv>=1.0`)
+- python-dotenv (`python-dotenv>=1.0`) — installed but **not currently wired up**: no
+  `dotenv`/`load_dotenv()` usage exists anywhere in `app/` (confirmed via `grep -rn "dotenv" app/`).
+  `.env.example` declares `PORT=8000` and `APP_ENV=development`, but nothing in the code reads
+  them; the actual port comes from the `--port 8000` CLI flag in section 2, not from this file.
 - Frontend: vanilla JavaScript (`frontend/index.html`, referenced in `README.md`) — no framework,
   no build step
 
