@@ -1,55 +1,65 @@
 # CLAUDE.md
 
-Project instructions for Claude Code working in this repository.
+Project instructions for Claude Code working in this repository (Module 4 Task Tracker).
 
-## What this project is
+## 1. Tech stack
 
-A Task Tracker REST API (Python/FastAPI) with a vanilla HTML/CSS/JavaScript Kanban-board
-frontend — no framework, no build step. Built incrementally across an AUB AI-Assisted Coding
-course: Modules 1-3 (CRUD, business rules, Kanban UI with drag-and-drop) and a mid-course project
-adding due dates/overdue filter and tags/tag filter. See `README.md` for setup/run instructions,
-`CONTEXT.md` for architecture decisions and requirements history, and `docs/midcourse/` for the
-mid-course project's user stories, mini-ADR, prompt log, verification evidence, and reflection.
+- Python 3.11.9 (confirmed via `venv\Scripts\python.exe --version`; not pinned in
+  `requirements.txt` itself, so re-verify if the venv is ever recreated)
+- FastAPI (`fastapi>=0.110`)
+- Pydantic v2 (`pydantic>=2.6`)
+- Uvicorn (`uvicorn[standard]>=0.29`)
+- pytest (`pytest>=9.0`)
+- httpx (`httpx>=0.28`)
+- python-dotenv (`python-dotenv>=1.0`)
+- Frontend: vanilla JavaScript (`frontend/index.html`, referenced in `README.md`) — no framework,
+  no build step
 
-## Running things
+## 2. Exact run command used in this course
 
-- Backend: `uvicorn app.main:app --reload` (starts at `http://127.0.0.1:8000`; docs at `/docs`).
-- Frontend: open `frontend/index.html` directly (`file://`), or serve it via
-  `python -m http.server 5500` from inside `frontend/`.
-- Tests: `python -m pytest tests/test_tasks.py -v` — **use `python -m pytest`, not bare
-  `pytest`**. The bare `pytest` command does not add the project root to `sys.path`, so `app`
-  fails to import.
+```
+uvicorn app.main:app --reload --port 8000
+```
 
-## Architecture conventions
+## 3. Exact test command used in this course
 
-- **Storage:** in-memory only (a `dict` in `app/storage.py`) — no database. This is a deliberate,
-  documented decision (see `CONTEXT.md` ADR-001 and `docs/midcourse/mini-adr.md`), not an
-  oversight. Data is lost on every restart; that's expected.
-- **Models:** Pydantic v2 syntax only — `field_validator` (not `@validator`), `ConfigDict` (not
-  `class Config`), `model_dump()`/`model_copy()` (not `.dict()`). All request/response models use
-  `model_config = ConfigDict(extra="forbid")`.
-- **Status transitions:** restricted to the pairs in `VALID_TRANSITIONS` in
-  `app/business_rules.py`. Don't assume a transition is valid or invalid without checking that set
-  — it does not simply block all backward moves (e.g. `Done → InProgress` is allowed; `Done →
-  ToDo` is not).
-- **Partial updates:** `TaskUpdate` fields are all optional; omitting a field leaves it unchanged,
-  sending an explicit `null`/`[]` clears it. This pattern is already established for `assignee`,
-  `due_date`, and `tags` — keep it consistent for any new optional field.
+```
+pytest -v
+```
+Note: bare `pytest` has been observed to fail in this repo with `ModuleNotFoundError: No module
+named 'app'`, because it doesn't add the project root to `sys.path`. If that happens, use
+`python -m pytest tests/test_tasks.py -v` instead, which has been confirmed to work.
 
-## Working style expectations
+## 4. Architecture summary
 
-- **Scope discipline:** do exactly what's asked in each request. Don't add authentication, a
-  database, Docker/deployment, new frameworks, or unrelated features unless explicitly requested,
-  even if they seem like natural next steps. This project is built module-by-module for course
-  deliverables, and unrequested scope creep makes it harder to track what belongs to which module.
-- **Small steps:** when implementing a feature, work one file/concern at a time (models → storage
-  → routes → tests → frontend), verifying each layer before moving to the next, rather than
-  generating a large multi-file change at once.
-- **Verify, don't assume:** before asserting that existing code "already handles" a new case
-  correctly, check it directly (a quick script, a manual test) rather than reasoning from pattern
-  similarity alone. This project has already been bitten once by an unverified assumption
-  (Pydantic's `date` type silently accepting a Unix timestamp instead of rejecting malformed
-  input) — verify claims before they go into a prompt, a test, or documentation.
-- **Git:** never push to the remote (`origin`, `mid-course-project` branch) without explicit
-  confirmation in chat, even if a local commit was just made. The mid-course project has already
-  been submitted; treat further pushes as sensitive until told otherwise.
+- Backend: `app/main.py` (FastAPI app + routes), `app/models.py` (Pydantic models),
+  `app/storage.py` (in-memory store), `app/business_rules.py` (status-transition rule).
+- Frontend: `frontend/index.html` (single-file Kanban board).
+- Tests: `tests/test_tasks.py`, `tests/conftest.py`. `tests/verify_a.py` also exists (a legacy
+  manual verification script, not part of the pytest suite run by the test command above).
+- Task rules (status-transition validation) live in `app/business_rules.py`.
+
+## 5. Business rules (verified from `app/business_rules.py` and `app/models.py`)
+
+- `TaskStatus` values: `ToDo`, `InProgress`, `Done`.
+- `VALID_TRANSITIONS`: `ToDo → InProgress`, `InProgress → Done`, `Done → InProgress`.
+- Any other transition (including same-status, e.g. `ToDo → ToDo`, and `Done → ToDo`) raises
+  `HTTPException(422)` listing the allowed transitions.
+
+## 6. UI states and CORS notes
+
+- CORS (`app/main.py`): `allow_origins=["http://localhost:5500", "http://127.0.0.1:5500", "null"]`,
+  `allow_methods=["GET", "POST", "PATCH", "DELETE"]`, `allow_headers=["Content-Type"]`.
+- UI behaviors per `README.md`'s Features section: three-column Kanban board, drag-and-drop status
+  updates, create/edit modal, overdue tasks highlighted with a red border, "Show overdue only"
+  filter, tag chips on cards, "Filter by tag" field.
+- `[VERIFY]` — no explicit "loading / empty / error / ready" state documentation found in the
+  files read for this revision.
+
+## 7. Do-not rules
+
+- Do not add authentication, a database, deployment steps (Docker, cloud, etc.), or major UI
+  changes without asking first.
+- Do not change application code as part of documentation updates.
+- Do not invent version numbers or business rules not present in the code — mark uncertain items
+  `[VERIFY]` instead.
