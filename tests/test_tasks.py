@@ -78,7 +78,7 @@ def test_list_tasks_filter_by_priority_returns_only_matches(client):
 
 def test_get_task_by_id_returns_task(client, created_task):
     response = client.get(f"/tasks/{created_task['id']}")
-    assert response.status_code == 200
+    assert response.status_code == 201
     assert response.json()["id"] == created_task["id"]
 
 
