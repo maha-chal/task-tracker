@@ -95,6 +95,13 @@ docker run --rm -p 8000:8000 task-tracker
 
 ## 4. Module 5 guardrails (agent working rules)
 
+> **Scope — temporary, phase-specific.** These rules apply during the
+> **Module 5 grading/governance phase**, when the focus is reviewing and
+> governing existing work rather than building features. They are deliberately
+> restrictive for that phase and should be revisited or lifted once Module 5 is
+> complete. They are **not** the repository's permanent policy — the standing
+> rules live in Section 5.
+
 - **Docs-first:** prefer read-only analysis; write only under `docs/` unless a
   different path is explicitly approved.
 - **No `app/` changes** during Module 5 unless the human asks for one specific,
