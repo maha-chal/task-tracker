@@ -36,10 +36,13 @@ corrected with A's product framing and C's honesty about sourcing.**
 
 ## 3. Context-engineering rule
 
-> **For a shared, rule-heavy architecture or onboarding doc, I use structured
-> context (Strategy B) grounded in AGENTS.md, because it surfaces the specific
-> business rules — exact transitions, overdue logic, the tag-comma quirk — that
-> minimal context leaves vague.** **For a focused change to a single subsystem
-> where a wrong claim is costly, I use targeted context (Strategy C), because
-> reading only the anchor files keeps every statement verifiable and blocks the
-> borrowed confidence that structured context invites.**
+> **For writing a one-page architecture or onboarding doc for the Task Tracker
+> (the Strategy A/B/C exercise), I use structured context (Strategy B) grounded in
+> AGENTS.md, because it surfaces the specific business rules — exact transitions,
+> overdue logic, the tag-comma quirk — that the minimal-context draft left vague.**
+> **For a bounded, must-be-exact read of one module — the line-by-line walkthrough
+> of the CRUD endpoints in `app/main.py`, or any single security-review finding I
+> have to state precisely — I use targeted context (Strategy C) anchored on that
+> file plus the files it imports, because reading only those keeps every claim
+> verifiable and blocks the borrowed confidence that AGENTS.md-based context
+> invites.**
