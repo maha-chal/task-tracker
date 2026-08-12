@@ -115,7 +115,7 @@ Use the module form — it puts the project root on `sys.path` so `app` can be i
 confirmed-working command and the one CI runs:
 
 ```bash
-python -m pytest tests/test_tasks.py -v
+python -m pytest tests/ -v
 ```
 
 Expected result: **45 passed**.
@@ -156,7 +156,7 @@ GitHub Actions workflow: `.github/workflows/ci.yml`.
 - **Triggers:** every `push` and every `pull_request`.
 - **Runner:** `ubuntu-latest`, Python `3.11`.
 - **Steps:** checkout → set up Python → `pip install -r requirements.txt` → run
-  `python -m pytest tests/test_tasks.py -v`.
+  `python -m pytest tests/ -v`.
 - **Scope:** tests only. No build, publish, or deployment steps.
 
 ## 8. Project structure
@@ -215,3 +215,68 @@ task-tracker/
 - **Module 4 verification log:** [`docs/module4/verification.md`](docs/module4/verification.md) —
   direct verification of API claims (status-transition rule, 422 validation behaviors) against the
   running backend.
+
+## Final Project
+
+Branch reviewed: `final-project`
+
+### What this submission demonstrates
+
+- Existing Task Tracker app still runs inside the intended course scope — no new product features.
+- CI runs the pytest suite on push and pull request.
+- Docker image builds and runs with `/health` returning 200.
+- AI review, security, and ownership evidence is in `docs/`.
+
+### How to run locally
+
+```bash
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+```
+
+Frontend (second terminal), then open `http://localhost:5500/`:
+
+```bash
+python -m http.server 5500 --directory frontend
+```
+
+### How to run tests
+
+```bash
+python -m pytest tests/ -v
+```
+
+Expected result: **45 passed**.
+
+### How to run with Docker
+
+```bash
+docker build -t task-tracker .
+docker run --rm -p 8000:8000 task-tracker
+curl http://127.0.0.1:8000/health
+```
+
+### Evidence files
+
+- [`docs/release-evidence.md`](docs/release-evidence.md) — baseline, CI, Docker, and
+  documentation claim-vs-reality checks.
+- [`docs/final-ai-review.md`](docs/final-ai-review.md) — AI code review log, security
+  mini-review, manual check, and ownership statement.
+- [`docs/ai-playbook.md`](docs/ai-playbook.md) — personal AI usage rules.
+
+### AI assistance summary
+
+AI helped draft or review: the CI workflow, the Dockerfile, project documentation, and the
+security review.
+
+I verified the work by: running the test suite (45 passed), confirming `GET /health` returned
+HTTP 200 both locally and from the container, building and running the Docker image, checking
+the container runs as a non-root user with no secrets baked in, and performing my own manual
+security scan of the codebase.
+
+One AI suggestion I rejected or corrected: the AI graded three security findings — the CORS
+`"null"` origin, unpinned dependencies, and the missing CI `permissions` block — as **Valid
+(Low)**. I reviewed each against this project's local, single-user, no-deployment scope and
+**downgraded all three to Noise**, since none is actionable at this scope.
