@@ -93,19 +93,19 @@ docker run --rm -p 8000:8000 task-tracker
   `app/models.py:48–60` does not reject commas, so the API itself would accept a
   tag containing one.
 
-## 4. Module 5 guardrails (agent working rules)
+## 4. Review-phase guardrails (agent working rules)
 
-> **Scope — temporary, phase-specific.** These rules apply during the
-> **Module 5 grading/governance phase**, when the focus is reviewing and
-> governing existing work rather than building features. They are deliberately
-> restrictive for that phase and should be revisited or lifted once Module 5 is
-> complete. They are **not** the repository's permanent policy — the standing
-> rules live in Section 5.
+> **Scope — phase-specific.** These rules apply during the **Module 5
+> grading/governance phase and the final-project release-check phase**, when the
+> focus is reviewing and governing existing work rather than building features.
+> They are deliberately restrictive for those phases. They are **not** the
+> repository's permanent policy — the standing rules live in Section 5.
 
 - **Docs-first:** prefer read-only analysis; write only under `docs/` unless a
   different path is explicitly approved.
-- **No `app/` changes** during Module 5 unless the human asks for one specific,
-  minimal fix.
+- **Protect `app/` and `frontend/`:** change them only for a small bug fix, a
+  security fix, or a documentation-supported correction — and explain any such
+  change in `docs/final-ai-review.md`.
 - **One bounded task per thread** — do not bundle or pre-empt later steps.
 - **Announce intent first:** state the task understood, files to inspect, and
   whether edit permission is needed.

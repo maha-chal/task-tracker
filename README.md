@@ -231,7 +231,13 @@ Branch reviewed: `final-project`
 
 ```bash
 python -m venv venv
-.\venv\Scripts\Activate.ps1
+```
+
+Activate it — **Windows (PowerShell):** `.\venv\Scripts\Activate.ps1` · **Windows (cmd):**
+`venv\Scripts\activate.bat` · **macOS / Linux:** `source venv/bin/activate` (see section 3).
+Then:
+
+```bash
 pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
@@ -255,6 +261,12 @@ Expected result: **45 passed**.
 ```bash
 docker build -t task-tracker .
 docker run --rm -p 8000:8000 task-tracker
+```
+
+`docker run` takes over the terminal while the container is up, so verify the health endpoint
+from a **second** terminal:
+
+```bash
 curl http://127.0.0.1:8000/health
 ```
 

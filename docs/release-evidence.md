@@ -27,8 +27,10 @@ venv (Python 3.11.9).
 
 - **Workflow file:** `.github/workflows/ci.yml` (triggers: `push` and `pull_request`)
 - **Latest run link or note:**
-  <https://github.com/maha-chal/task-tracker/actions/runs/31645766473> — **Success** (green),
-  commit `c381934` on branch `final-project`, job `test` passed in 15s.
+  <https://github.com/maha-chal/task-tracker/actions/runs/31652395739> — run **#8**, **Success**
+  (green), commit `38600ae` on branch `final-project`, job `test` passed in 17s (total 21s).
+  This is the first run to execute the widened test command recorded below; the previous green
+  run (#7, commit `c381934`) still used the older single-file command.
 - **Test command used by CI:** `python -m pytest tests/ -v`
 - **Shortcut check:**
   - no `continue-on-error` — confirmed absent from `ci.yml`

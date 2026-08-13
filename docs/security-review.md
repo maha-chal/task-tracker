@@ -10,12 +10,14 @@ authentication is an **intentional, documented** decision for this local,
 single-user course project (A-1), not a defect at this scope.
 
 The most material items are a validation inconsistency (V-1 — some free-text
-fields are uncapped while `title` is capped) and two **You-only** findings the
-automated pass missed (M-1, M-2). Both You-only findings are the same root
-pattern — **enforcement asymmetry**, where a rule is applied on one path and
-skipped on another — which is the headline learning from this review: the AI
-pass covered validation and build/CI hygiene well but did not surface either
-asymmetry; the manual trace did.
+fields are uncapped while `title` is capped) and two findings the automated
+security pass missed (M-1, M-2). Their provenance differs and is recorded
+honestly: **M-1 was identified independently during a manual trace; M-2 emerged
+from guided analysis, after an initial incorrect reading of the tag-comma
+behaviour was corrected.** Both are the same root pattern — **enforcement
+asymmetry**, where a rule is applied on one path and skipped on another — which
+is the headline learning from this review: the AI security pass covered
+validation and build/CI hygiene well but surfaced neither asymmetry.
 
 **At a glance:**
 
@@ -25,7 +27,7 @@ asymmetry; the manual trace did.
 | Valid — hardening / validation (Low) | V-1, D-1, D-2, CI-1, M-1, M-2 |
 | Valid — documented scope boundary | A-1, C-1 (E-1 as Info) |
 | Noise (true but not actionable at this scope) | hardcoded HTTP URL, missing CSP |
-| Reconciliation | AI + manual **agree** on the shared set; **You-only:** M-1, M-2; **AI-only:** none |
+| Reconciliation | AI + manual **agree** on the shared set; **missed by the AI security pass:** M-1 (identified independently), M-2 (guided analysis); **AI-only:** none |
 
 Severities are relative to the project's stated **local, single-user,
 no-deployment** scope; several items (A-1, C-1, the HTTP URL) rise only if the
@@ -71,10 +73,17 @@ beyond localhost.
 
 ---
 
-## Section 3 — Manual scan finding (You-only)
+## Section 3 — Findings from the manual scan
 
-Found during an independent manual trace of `app/business_rules.py`, **not**
-surfaced as a finding by the AI security pass (reconciliation: **You-only**).
+Both findings below came out of a manual trace of `app/business_rules.py` and
+`frontend/index.html`, and **neither was surfaced by the AI security pass**.
+Their provenance differs, and is recorded honestly rather than flattened:
+
+- **M-1 — identified independently.** Found by reasoning through the create path
+  versus the PATCH path during the trace.
+- **M-2 — found through guided analysis.** The initial reading was wrong (the
+  backend was assumed to reject commas in tags); the correction during review
+  established the actual finding.
 
 | ID | Severity | File / location | Finding | Evidence | Suggested next step | Confidence |
 |----|----------|-----------------|---------|----------|---------------------|------------|
@@ -82,13 +91,15 @@ surfaced as a finding by the AI security pass (reconciliation: **You-only**).
 | M-2 | Valid — Low | backend `app/models.py:48-60`; frontend `frontend/index.html:770` (split) & `:718` (join) | **Comma-in-tag rule enforced only client-side.** The UI splits tag input on commas, so a tag can never contain one; the backend tag validator does no comma check, so `POST /tasks {"tags":["urgent,backend"]}` stores a single comma-bearing tag. Opening that task in the edit modal then join-splits it, silently turning one tag into two — data corruption with no error. Same asymmetry class as M-1 (rule enforced on one path only), here client-side-only validation. | Backend validator only trims/blank-checks/de-dupes (`app/models.py:48-60`); UI `split(',')` (`frontend/index.html:770`) and `join(', ')` (`:718`); documented `AGENTS.md:90-94`. | Backlog: reject or escape commas in the tag validator, or stop relying on comma join/split in the UI. | High |
 
 **Reconciliation note:** the AI/manual reconciliation is no longer
-all-Agreement — the AI pass produced the shared set (A-1, C-1, E-1, V-1, D-1,
-D-2, CI-1); the manual pass added **M-1** and **M-2** as **You-only** findings,
-neither surfaced by the AI security pass. No **AI-only** findings (every AI item
-was reviewed manually). Both You-only findings are instances of the same
-enforcement-asymmetry class — a rule applied on one path and skipped on another.
+all-Agreement — the AI security pass produced the shared set (A-1, C-1, E-1,
+V-1, D-1, D-2, CI-1); the manual scan added **M-1** and **M-2**, neither of which
+the AI security pass surfaced. Of those two, only **M-1** was identified
+independently; **M-2** came out of guided analysis in which an initial incorrect
+reading was corrected. No **AI-only** findings (every AI item was reviewed
+manually). Both are instances of the same enforcement-asymmetry class — a rule
+applied on one path and skipped on another.
 
-### Context behind each You-only finding
+### Context behind each manual finding
 
 Each manual finding is run through three questions — *what business logic, scope
 decision, or threat-model context explains it?* — to pin down why it exists and
