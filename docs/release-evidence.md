@@ -7,7 +7,8 @@ venv (Python 3.11.9).
 ## Baseline
 
 - **Branch:** `final-project`
-- **Date:** 2026-08-12
+- **Date:** 2026-08-12 (UTC — timestamps below are UTC; the corresponding commits are
+  stamped 2026-08-13 in local time, UTC+3)
 - **Local app run command:** `uvicorn app.main:app --reload --port 8000`
 - **/health result:** HTTP **200** —
   `{"status":"ok","timestamp":"2026-08-12T23:28:15.827117+00:00"}`
@@ -61,8 +62,9 @@ pattern). The command was therefore widened to `tests/` with no change in result
 - **No-baked-secrets check:**
   - `docker exec tt-check ls -la /app` → contains only the `app/` directory; `tests/` and
     `frontend/` are not copied into the image.
-  - A search for env files inside the container (`find / -maxdepth 4 -name '*.env' -o -name
-    '.env*'`) returned **no results** — no `.env`, credentials, or tokens are baked in.
+  - A search for env files inside the container
+    (`find / -maxdepth 4 -name '*.env' -o -maxdepth 4 -name '.env*'`) returned **no results**
+    — no `.env`, credentials, or tokens are baked in.
   - Runtime command is explicit: `[uvicorn app.main:app --host 0.0.0.0 --port 8000]`.
 
 ## Documentation claim-vs-reality log

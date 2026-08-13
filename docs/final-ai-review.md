@@ -1,7 +1,8 @@
 # Final AI Review and Ownership Evidence
 
 Main AI-assisted-coding evidence document for the final project. Branch:
-`final-project`. Date: 2026-08-12.
+`final-project`. Date: 2026-08-12 (UTC — the corresponding commits are stamped
+2026-08-13 in local time, UTC+3).
 
 ## AGENTS.md guardrails
 
